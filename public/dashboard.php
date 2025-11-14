@@ -229,4 +229,5 @@ $timeLogs = getRecentTimeLogs($pdo);
 
 </body>
 </html>
-<!-- TESTING -->
+
+<!-- etss -->
