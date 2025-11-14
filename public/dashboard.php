@@ -44,6 +44,7 @@ function getRecentTimeLogs($pdo, $limit = 10) {
     $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 }
 
 // -------------------- Fetch Data --------------------
@@ -74,10 +75,35 @@ $timeLogs = getRecentTimeLogs($pdo);
             <a href="read_tag.php" class="btn btn-sm btn-primary">Read Tag</a>
             <a href="register_user.php" class="btn btn-sm btn-success">Register User</a>
             <a href="users.php" class="btn btn-sm btn-warning">User Management</a>
-            <a href="logout.php" class="btn btn-sm btn-danger">Logout</a>
+            <!-- Logout Button -->
+<button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
+    Logout
+</button>
+
+
         </div>
     </div>
 </nav>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"> <!-- centers the modal -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        Are you sure you want to logout?
+      </div>
+      <div class="modal-footer justify-content-center">
+        <a href="logout.php" class="btn btn-danger">Yes</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <div class="container mt-4">
 
@@ -197,5 +223,10 @@ $timeLogs = getRecentTimeLogs($pdo);
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
 </body>
 </html>
+<!-- TESTING -->

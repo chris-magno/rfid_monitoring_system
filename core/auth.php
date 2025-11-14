@@ -35,16 +35,16 @@ function isLoggedIn() {
 
 function requireLogin() {
     if (!isLoggedIn()) {
-        header('Location: index.php');
+        header('Location: /rfid_monitoring_system/public/index.php');
         exit;
     }
 }
-
+// http://localhost/rfid_monitoring_system/public/dashboard.php
 function logout() {
     session_start();
     session_unset();
     session_destroy();
-    header('Location: index.php');
+    header('Location: /rfid_monitoring_system/public/index.php');
     exit;
 }
 

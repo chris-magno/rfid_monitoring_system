@@ -1,3 +1,3 @@
 <?php
 require_once __DIR__ . '/../core/auth.php';
-logout();
+logout();// destroys session and redirects to login
