@@ -15,8 +15,9 @@ function getTotalUsers($pdo) {
     return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 }
 
-function getTotalAlerts($pdo) {
-    $stmt = $pdo->query("SELECT COUNT(*) AS total FROM alerts");
+// Unread alerts count for badge
+function getUnreadAlertsCount($pdo) {
+    $stmt = $pdo->query("SELECT COUNT(*) AS total FROM admin_alerts WHERE is_read = 0");
     return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 }
 
@@ -44,14 +45,26 @@ function getRecentTimeLogs($pdo, $limit = 10) {
     $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
+function getRecentAlerts($pdo, $limit = 5) {
+    $stmt = $pdo->prepare("
+        SELECT id, uid, user_name, alert_type, message, created_at, is_read
+        FROM admin_alerts
+        ORDER BY created_at DESC
+        LIMIT :limit
+    ");
+    $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // -------------------- Fetch Data --------------------
 $totalUsers = getTotalUsers($pdo);
-$totalAlerts = getTotalAlerts($pdo);
+$totalAlerts = getUnreadAlertsCount($pdo);  // unread alerts
 $accessLogs = getRecentAccessLogs($pdo);
 $timeLogs = getRecentTimeLogs($pdo);
+$recentAlerts = getRecentAlerts($pdo);
 ?>
 
 <!DOCTYPE html>
@@ -63,6 +76,7 @@ $timeLogs = getRecentTimeLogs($pdo);
     <style>
         .table-responsive { max-height: 400px; overflow-y: auto; }
         .card { border-radius: 1rem; }
+        .dropdown-menu { max-height: 350px; overflow-y: auto; }
     </style>
 </head>
 <body class="bg-light">
@@ -71,23 +85,51 @@ $timeLogs = getRecentTimeLogs($pdo);
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
         <a class="navbar-brand" href="#">RFID Monitoring</a>
-        <div class="ms-auto d-flex gap-2">
+        <div class="ms-auto d-flex gap-2 align-items-center">
             <a href="read_tag.php" class="btn btn-sm btn-primary">Read Tag</a>
             <a href="register_user.php" class="btn btn-sm btn-success">Register User</a>
             <a href="users.php" class="btn btn-sm btn-warning">User Management</a>
+
+            <!-- Alerts Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-danger dropdown-toggle position-relative" type="button" id="alertsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Alerts
+                    <?php if ($totalAlerts > 0): ?>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning">
+                            <?= $totalAlerts ?>
+                            <span class="visually-hidden">unread alerts</span>
+                        </span>
+                    <?php endif; ?>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="alertsDropdown" style="width: 300px;">
+                    <?php if (!empty($recentAlerts)): ?>
+                        <?php foreach ($recentAlerts as $alert): ?>
+                            <li class="dropdown-item small <?= $alert['is_read'] ? '' : 'fw-bold' ?>">
+                                <strong><?= htmlspecialchars($alert['user_name'] ?? 'Unknown') ?></strong><br>
+                                <?= htmlspecialchars($alert['alert_type']) ?><br>
+                                <small class="text-muted"><?= (new DateTime($alert['created_at'], new DateTimeZone('Asia/Manila')))->format('M d, h:i A') ?></small>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                        <?php endforeach; ?>
+                        <li>
+                            <button class="dropdown-item text-center small text-primary" id="markAllReadBtn">Mark All as Read</button>
+                        </li>
+                        <li><a class="dropdown-item text-center small" href="alerts.php">View All Alerts</a></li>
+                    <?php else: ?>
+                        <li class="dropdown-item text-center small">No alerts</li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+
             <!-- Logout Button -->
-<button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
-    Logout
-</button>
-
-
+            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</button>
         </div>
     </div>
 </nav>
 
 <!-- Logout Confirmation Modal -->
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered"> <!-- centers the modal -->
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
@@ -103,7 +145,6 @@ $timeLogs = getRecentTimeLogs($pdo);
     </div>
   </div>
 </div>
-
 
 <div class="container mt-4">
 
@@ -216,6 +257,36 @@ $timeLogs = getRecentTimeLogs($pdo);
         </div>
     </div>
 
+    <!-- Recent Alerts -->
+    <h3 class="mt-5">Recent Alerts</h3>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="table-danger">
+                <tr>
+                    <th>User</th>
+                    <th>UID</th>
+                    <th>Type</th>
+                    <th>Message</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($recentAlerts as $alert): ?>
+                    <tr class="<?= $alert['is_read'] ? '' : 'fw-bold' ?>">
+                        <td><?= htmlspecialchars($alert['user_name'] ?? 'Unknown') ?></td>
+                        <td><?= htmlspecialchars($alert['uid']) ?></td>
+                        <td><?= htmlspecialchars($alert['alert_type']) ?></td>
+                        <td><?= htmlspecialchars($alert['message']) ?></td>
+                        <td><?= (new DateTime($alert['created_at'], new DateTimeZone('Asia/Manila')))->format('M d, Y h:i A') ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <div class="text-end mb-3">
+            <a href="alerts.php" class="btn btn-danger btn-sm">View All Alerts</a>
+        </div>
+    </div>
+
     <!-- Quick Access -->
     <div class="mt-4 text-center">
         <a href="users.php" class="btn btn-warning btn-lg">Go to User Management</a>
@@ -225,9 +296,18 @@ $timeLogs = getRecentTimeLogs($pdo);
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-
+<script>
+// Mark All Alerts as Read
+document.getElementById('markAllReadBtn')?.addEventListener('click', function() {
+    fetch('api/mark_read_alert.php', { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert('Failed to mark all as read');
+    })
+    .catch(() => alert('Error connecting to server'));
+});
+</script>
 
 </body>
 </html>
-
-<!-- etss -->
