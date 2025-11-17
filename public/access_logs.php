@@ -30,7 +30,6 @@ if ($search !== '') {
 
 $sql .= " ORDER BY al.log_time DESC";
 
-// Initialize to avoid undefined variable warnings
 $accessLogs = [];
 
 try {
@@ -38,20 +37,13 @@ try {
     $stmt->execute($params);
     $fetched = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Ensure $accessLogs is an array
-    if (is_array($fetched)) {
-        $accessLogs = $fetched;
-    } else {
-        $accessLogs = [];
-    }
+    $accessLogs = is_array($fetched) ? $fetched : [];
 
 } catch (PDOException $e) {
-    // Log error to your error log — don't expose DB errors to users
     error_log('Access Logs query error: ' . $e->getMessage());
     $accessLogs = [];
 }
 
-// --- Prepare previous/next day ---
 $prevDay = date('Y-m-d', strtotime("$day -1 day"));
 $nextDay = date('Y-m-d', strtotime("$day +1 day"));
 ?>
@@ -64,77 +56,118 @@ $nextDay = date('Y-m-d', strtotime("$day +1 day"));
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
+        /* ---------- GLOBAL ----------- */
         body {
-            background-color: #f5f6fa;
+            background-color: #f5f7fb;
+            font-family: 'Inter', sans-serif;
         }
+
         .page-title {
+            font-size: 2rem;
             font-weight: 700;
-            font-size: 1.8rem;
+            color: #2c3e50;
         }
+
+        /* ---------- MODERN CARDS ----------- */
         .card-modern {
             border: none;
-            border-radius: 16px;
-            padding: 22px;
+            border-radius: 18px;
+            padding: 25px;
             background: #ffffff;
-            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.08);
         }
+
         .filter-card {
-            border-radius: 16px;
-            padding: 20px;
+            border: none;
+            border-radius: 18px;
             background: #ffffff;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            padding: 25px;
         }
+
+        /* ---------- BUTTONS ----------- */
         .btn-modern {
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 10px 18px;
+            font-weight: 500;
         }
+
+        .btn-outline-primary {
+            border-width: 2px;
+        }
+
+        /* ---------- TABLE ----------- */
         table {
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
         }
+
         thead {
-            background: #2c3e50;
+            background: #283747;
             color: white;
+        }
+
+        tbody tr {
+            transition: all 0.15s ease-in-out;
+        }
+
+        tbody tr:hover {
+            background: #f0f3f9 !important;
+        }
+
+        /* ---------- BADGES ----------- */
+        .badge {
+            font-size: 0.85rem;
+            padding: 8px 14px;
+            border-radius: 12px;
+        }
+
+        /* ---------- INPUTS ----------- */
+        input[type="text"], input[type="date"] {
+            border-radius: 12px !important;
+            padding: 12px !important;
+            height: auto !important;
         }
     </style>
 </head>
+
 <body>
 
 <div class="container py-4">
 
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="page-title">Access Logs</h2>
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="page-title">📋 Access Logs</h2>
         <a href="dashboard.php" class="btn btn-secondary btn-modern">← Back to Dashboard</a>
     </div>
 
-    <!-- Search & Filters Card -->
+    <!-- FILTERS -->
     <div class="filter-card mb-4">
         <form class="row g-3" method="GET">
 
             <div class="col-md-4">
-                <input type="text" name="search" class="form-control form-control-lg"
+                <input type="text" name="search" class="form-control"
                        placeholder="Search UID, Name, Email..."
                        value="<?= htmlspecialchars($search) ?>">
             </div>
 
-            <div class="col-md-4 d-flex align-items-center gap-2">
+            <div class="col-md-5 d-flex align-items-center gap-2">
                 <a href="?day=<?= $prevDay ?>&search=<?= urlencode($search) ?>"
                    class="btn btn-outline-primary btn-modern">← Previous</a>
 
-                <input type="date" name="day" value="<?= $day ?>" class="form-control form-control-lg">
+                <input type="date" name="day" value="<?= $day ?>" class="form-control">
 
                 <a href="?day=<?= $nextDay ?>&search=<?= urlencode($search) ?>"
                    class="btn btn-outline-primary btn-modern">Next →</a>
             </div>
 
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary btn-modern w-100">Filter</button>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary btn-modern w-100">Apply Filters</button>
             </div>
         </form>
     </div>
 
-    <!-- Access Logs Table (Inside a modern card) -->
+    <!-- TABLE CARD -->
     <div class="card-modern">
         <div class="table-responsive">
             <table class="table table-hover align-middle">
@@ -152,39 +185,35 @@ $nextDay = date('Y-m-d', strtotime("$day +1 day"));
                 </thead>
 
                 <tbody>
-                <?php foreach ((array)$accessLogs as $log): ?>
+                <?php foreach ($accessLogs as $log): ?>
                     <tr>
-                        <td><?= htmlspecialchars($log['id'] ?? '') ?></td>
-                        <td><?= htmlspecialchars($log['uid'] ?? '') ?></td>
+                        <td><?= htmlspecialchars($log['id']) ?></td>
+                        <td><?= htmlspecialchars($log['uid']) ?></td>
                         <td><?= htmlspecialchars($log['user_name'] ?? 'Unknown') ?></td>
                         <td><?= htmlspecialchars($log['email'] ?? '-') ?></td>
 
                         <td>
-                            <?php if (($log['status'] ?? '') === 'granted'): ?>
-                                <span class="badge bg-success px-3 py-2">Granted</span>
+                            <?php if ($log['status'] === 'granted'): ?>
+                                <span class="badge bg-success">Granted</span>
                             <?php else: ?>
-                                <span class="badge bg-danger px-3 py-2">Denied</span>
+                                <span class="badge bg-danger">Denied</span>
                             <?php endif; ?>
                         </td>
 
-                        <td><?= htmlspecialchars($log['attempts'] ?? '0') ?></td>
+                        <td><?= htmlspecialchars($log['attempts']) ?></td>
 
                         <td>
                             <?php if (($log['access_type'] ?? '') === 'otp'): ?>
-                                <span class="badge bg-info px-3 py-2">OTP</span>
+                                <span class="badge bg-info">OTP</span>
                             <?php else: ?>
-                                <span class="badge bg-primary px-3 py-2">RFID</span>
+                                <span class="badge bg-primary">RFID</span>
                             <?php endif; ?>
                         </td>
 
                         <td>
-                            <?php
-                                if (!empty($log['log_time'])) {
-                                    echo (new DateTime($log['log_time']))->format('M d, Y h:i A');
-                                } else {
-                                    echo '-';
-                                }
-                            ?>
+                            <?= !empty($log['log_time'])
+                                ? (new DateTime($log['log_time']))->format('M d, Y • h:i A')
+                                : '-' ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

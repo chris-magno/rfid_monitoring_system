@@ -3,3 +3,6 @@
 [2025-11-01 14:49:40] Mailer Error: SMTP Error: Could not authenticate.
 [2025-11-01 14:52:57] Mailer Error: SMTP Error: Could not authenticate.
 [2025-11-01 14:53:34] Mailer Error: SMTP Error: Could not authenticate.
+[2025-11-17 15:38:43] Mailer Error: SMTP Error: Could not connect to SMTP host. Failed to connect to server SMTP server error: Failed to connect to server Additional SMTP info: php_network_getaddresses: getaddrinfo for smtp.gmail.com failed: No such host is known. 
+[2025-11-17 15:38:49] Mailer Error: SMTP Error: Could not connect to SMTP host. Failed to connect to server SMTP server error: Failed to connect to server Additional SMTP info: php_network_getaddresses: getaddrinfo for smtp.gmail.com failed: No such host is known. 
+[2025-11-17 15:38:59] Mailer Error: SMTP Error: Could not connect to SMTP host. Failed to connect to server SMTP server error: Failed to connect to server Additional SMTP info: php_network_getaddresses: getaddrinfo for smtp.gmail.com failed: No such host is known. 
