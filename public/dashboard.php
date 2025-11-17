@@ -241,13 +241,9 @@ $recentAlerts = getRecentAlerts($pdo);
     </style>
 </head>
 <body>
-<<<<<<< HEAD
-=======
 
 <!-- TOGGLE BUTTON / HAMBURGER -->
 <button class="toggle-btn" id="toggleBtn"><i class="bi bi-list"></i></button>
->>>>>>> e0819aecccea21e01e16e4d97be9759f6e3fe34a
-
 <!-- TOGGLE BUTTON / HAMBURGER -->
 <button class="toggle-btn" id="toggleBtn"><i class="bi bi-list"></i></button>
 
@@ -278,18 +274,14 @@ $recentAlerts = getRecentAlerts($pdo);
         </div>
         <div class="col-md-3">
             <div class="card-modern">
-<<<<<<< HEAD
                 <h5>Active Users</h5>
                 <div class="number text-success"><?= $activeUsers ?></div>
-=======
                 <h5>Total Time Logs</h5>
                 <div class="number"><?= $totalTimeLogs ?></div>
->>>>>>> e0819aecccea21e01e16e4d97be9759f6e3fe34a
             </div>
         </div>
         <div class="col-md-3">
             <div class="card-modern">
-<<<<<<< HEAD
                 <h5>Inactive Users</h5>
                 <div class="number text-danger"><?= $inactiveUsers ?></div>
             </div>
@@ -298,15 +290,12 @@ $recentAlerts = getRecentAlerts($pdo);
             <div class="card-modern">
                 <h5>Unread Alerts</h5>
                 <div class="number"><?= $totalAlertsUnread ?></div>
-=======
                 <h5>Total Alerts</h5>
                 <div class="number"><?= $totalAlertsAll ?></div>
->>>>>>> e0819aecccea21e01e16e4d97be9759f6e3fe34a
             </div>
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- STATISTICS CARDS ROW 2 -->
     <div class="row mb-4 g-4">
         <div class="col-md-3">
@@ -335,8 +324,6 @@ $recentAlerts = getRecentAlerts($pdo);
         </div>
     </div>
 
-=======
->>>>>>> e0819aecccea21e01e16e4d97be9759f6e3fe34a
     <!-- CHARTS -->
     <h3 class="mt-5">Statistics Overview</h3>
     <div class="card-modern p-4">
@@ -397,10 +384,8 @@ $recentAlerts = getRecentAlerts($pdo);
                     </td>
                 </tr>
             <?php endforeach; ?>
-<<<<<<< HEAD
             </tbody>
         </table>
-=======
             </tbody>
         </table>
     </div>
@@ -433,7 +418,6 @@ $recentAlerts = getRecentAlerts($pdo);
         <div class="text-end mb-3">
             <a href="alerts.php" class="btn btn-danger btn-sm">View All Alerts</a>
         </div>
->>>>>>> e0819aecccea21e01e16e4d97be9759f6e3fe34a
     </div>
 
     <!-- ALERTS -->

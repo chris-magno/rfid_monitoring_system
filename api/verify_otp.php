@@ -17,7 +17,7 @@ if (!$otp || !$userId) {
     exit;
 }
 
-// Fetch OTP in database
+// Fetch OTP from database
 $stmt = $pdo->prepare("
     SELECT * FROM otp_codes
     WHERE user_id = :user_id
@@ -32,7 +32,7 @@ $stmt->execute([
 ]);
 $otpRecord = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Fetch user's UID (for logs)
+// Fetch user's UID
 $stmtUser = $pdo->prepare("SELECT uid FROM users WHERE id = ?");
 $stmtUser->execute([$userId]);
 $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
@@ -40,7 +40,7 @@ $uid = $user['uid'] ?? null;
 
 if ($otpRecord) {
 
-    // ✅ Check if user already has an open session (time_in but no time_out)
+    // Check for open session (time_in without time_out)
     $sessionStmt = $pdo->prepare("
         SELECT * FROM time_logs
         WHERE user_id = :user_id
@@ -55,14 +55,14 @@ if ($otpRecord) {
     $openSession = $sessionStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($openSession) {
-        // 🔹 If time_out is not set, close the session now
+        // Close the session → TIME OUT
         $updateStmt = $pdo->prepare("UPDATE time_logs SET time_out = NOW() WHERE id = :id");
         $updateStmt->execute(['id' => $openSession['id']]);
 
         $action = 'time_out';
         $message = 'Time-out recorded. Door locked.';
     } else {
-        // 🔹 If no open session, start a new one (time_in)
+        // Start new session → TIME IN
         $insertStmt = $pdo->prepare("
             INSERT INTO time_logs (user_id, uid, otp_code, time_in)
             VALUES (:user_id, :uid, :otp, NOW())
@@ -77,7 +77,7 @@ if ($otpRecord) {
         $message = 'Time-in recorded. Door unlocked.';
     }
 
-    // ✅ Update access logs
+    // Insert access logs
     $accessStmt = $pdo->prepare("
         INSERT INTO access_logs (uid, user_id, status, attempts, access_type, log_time)
         VALUES (:uid, :user_id, 'granted', 1, 'otp', NOW())
@@ -87,8 +87,8 @@ if ($otpRecord) {
         'user_id' => $userId
     ]);
 
-    // ✅ Send unlock signal to ESP
-    $esp_ip = "http://10.104.17.80/unlock"; // Replace with actual ESP IP
+    // Send unlock signal to ESP
+    $esp_ip = "http://10.104.17.80/unlock"; 
     $ch = curl_init($esp_ip);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
@@ -99,7 +99,6 @@ if ($otpRecord) {
 
     echo json_encode([
         'success' => true,
-<<<<<<< HEAD
         'action' => $action,
         'message' => $message,
         'esp_response' => $response,
@@ -108,7 +107,7 @@ if ($otpRecord) {
     exit;
 }
 
-// ❌ INVALID OR EXPIRED OTP
+// INVALID OTP → log denied attempt
 $stmt = $pdo->prepare("
     INSERT INTO access_logs (uid, user_id, status, attempts, access_type, log_time)
     VALUES (:uid, :user_id, 'denied', 1, 'otp', NOW())
@@ -117,21 +116,6 @@ $stmt->execute([
     'uid' => $uid,
     'user_id' => $userId
 ]);
-=======
-        'message' => 'Access granted via OTP. Door unlock signal sent.',
-        'esp_response' => $response
-    ]);
-} else {
-    // ❌ OTP invalid
-    $stmt = $pdo->prepare("
-        INSERT INTO access_logs (uid, user_id, status, attempts, access_type, log_time)
-        VALUES (:uid, :user_id, 'denied', 1, 'otp', NOW())
-    ");
-    $stmt->execute([
-        'uid' => $uid,
-        'user_id' => $userId
-    ]);
->>>>>>> e0819aecccea21e01e16e4d97be9759f6e3fe34a
 
 echo json_encode([
     'success' => false,
