@@ -244,8 +244,6 @@ $recentAlerts = getRecentAlerts($pdo);
 
 <!-- TOGGLE BUTTON / HAMBURGER -->
 <button class="toggle-btn" id="toggleBtn"><i class="bi bi-list"></i></button>
-<!-- TOGGLE BUTTON / HAMBURGER -->
-<button class="toggle-btn" id="toggleBtn"><i class="bi bi-list"></i></button>
 
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
@@ -276,8 +274,6 @@ $recentAlerts = getRecentAlerts($pdo);
             <div class="card-modern">
                 <h5>Active Users</h5>
                 <div class="number text-success"><?= $activeUsers ?></div>
-                <h5>Total Time Logs</h5>
-                <div class="number"><?= $totalTimeLogs ?></div>
             </div>
         </div>
         <div class="col-md-3">
@@ -290,8 +286,6 @@ $recentAlerts = getRecentAlerts($pdo);
             <div class="card-modern">
                 <h5>Unread Alerts</h5>
                 <div class="number"><?= $totalAlertsUnread ?></div>
-                <h5>Total Alerts</h5>
-                <div class="number"><?= $totalAlertsAll ?></div>
             </div>
         </div>
     </div>
@@ -386,38 +380,6 @@ $recentAlerts = getRecentAlerts($pdo);
             <?php endforeach; ?>
             </tbody>
         </table>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Recent Alerts -->
-    <h3 class="mt-5">Recent Alerts</h3>
-    <div class="table-responsive">
-        <table class="table table-striped table-bordered">
-            <thead class="table-danger">
-                <tr>
-                    <th>User</th>
-                    <th>UID</th>
-                    <th>Type</th>
-                    <th>Message</th>
-                    <th>Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($recentAlerts as $alert): ?>
-                    <tr class="<?= $alert['is_read'] ? '' : 'fw-bold' ?>">
-                        <td><?= htmlspecialchars($alert['user_name'] ?? 'Unknown') ?></td>
-                        <td><?= htmlspecialchars($alert['uid']) ?></td>
-                        <td><?= htmlspecialchars($alert['alert_type']) ?></td>
-                        <td><?= htmlspecialchars($alert['message']) ?></td>
-                        <td><?= (new DateTime($alert['created_at'], new DateTimeZone('Asia/Manila')))->format('M d, Y h:i A') ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-        <div class="text-end mb-3">
-            <a href="alerts.php" class="btn btn-danger btn-sm">View All Alerts</a>
-        </div>
     </div>
 
     <!-- ALERTS -->

@@ -21,7 +21,6 @@ function getRecentAlerts($pdo) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Unread alerts count
 function getUnreadAlertsCount($pdo) {
     $stmt = $pdo->query("SELECT COUNT(*) AS total FROM admin_alerts WHERE is_read = 0");
     return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
@@ -59,6 +58,7 @@ $totalAlerts = getUnreadAlertsCount($pdo);
             border: none;
         }
 
+        /* Table */
         table {
             border-radius: 16px;
             overflow: hidden;
@@ -118,14 +118,14 @@ $totalAlerts = getUnreadAlertsCount($pdo);
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>UID</th>
-                        <th>Type</th>
-                        <th>Message</th>
-                        <th>Time</th>
-                        <th>Action</th>
-                    </tr>
+                <tr>
+                    <th>User</th>
+                    <th>UID</th>
+                    <th>Type</th>
+                    <th>Message</th>
+                    <th>Time</th>
+                    <th>Action</th>
+                </tr>
                 </thead>
 
                 <tbody>
@@ -149,9 +149,8 @@ $totalAlerts = getUnreadAlertsCount($pdo);
 
                         <td>
                             <?php if (!$alert['is_read']): ?>
-                                <button 
-                                    class="btn btn-success btn-sm btn-modern mark-read-btn"
-                                    data-id="<?= $alert['id'] ?>">
+                                <button class="btn btn-success btn-sm btn-modern mark-read-btn"
+                                        data-id="<?= $alert['id'] ?>">
                                     Mark as Read
                                 </button>
                             <?php else: ?>
@@ -159,6 +158,7 @@ $totalAlerts = getUnreadAlertsCount($pdo);
                             <?php endif; ?>
                         </td>
                     </tr>
+
                 <?php endforeach; ?>
                 </tbody>
 
