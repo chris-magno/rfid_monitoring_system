@@ -38,7 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
         rel="stylesheet"
     >
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+
     <style>
+        font-family: 'UnifrakturMaguntia';
+
         /* Load the Cloister Black BT font */
         @font-face {
             font-family: 'Cloister Black BT';
@@ -137,9 +141,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="login-card shadow">
-        <h4 class="login-title">
+        <h4 class="login-title" style="font-family: 'UnifrakturMaguntia', cursive;">
             <img src="../letran_logo.png" alt="Letran Logo" class="logo">
-            Colegio De San Juan De Letran Manaoag
+            Colegio de San Juan de Letran Manaoag
         </h4>
 
         <?php if (!empty($error)): ?>
