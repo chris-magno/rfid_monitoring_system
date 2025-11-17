@@ -27,50 +27,113 @@ $role = strtolower($user['category_name']);
     <meta charset="UTF-8">
     <title>User Dashboard - RFID Monitoring</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f5f7fb;
+            font-family: "Inter", sans-serif;
+        }
+
+        .navbar {
+            border-bottom: 1px solid #222;
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .card-modern {
+            background: white;
+            padding: 25px;
+            border-radius: 18px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+            border: none;
+        }
+
+        .avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 4px solid #e8eef7;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.10);
+        }
+
+        .btn-modern {
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .input-modern {
+            border-radius: 12px !important;
+        }
+
+        .otp-group {
+            max-width: 330px;
+            margin: 0 auto;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+    </style>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-dark">
     <div class="container">
-        <a class="navbar-brand" href="#">RFID Monitoring</a>
+        <a class="navbar-brand fw-bold" href="#">RFID Monitoring</a>
         <div class="ms-auto">
-            <a href="logout.php" class="btn btn-sm btn-danger">Logout</a>
+            <a href="logout.php" class="btn btn-danger btn-sm">Logout</a>
         </div>
     </div>
 </nav>
 
+<!-- Main Container -->
 <div class="container mt-5">
+
+    <!-- Header -->
     <div class="text-center mb-4">
-        <h2>Welcome, <?= htmlspecialchars($user['name']) ?>!</h2>
-        <p class="text-muted">Here is your profile information.</p>
+        <h2 class="dashboard-title">Welcome, <?= htmlspecialchars($user['name']) ?>!</h2>
+        <p class="text-muted">Here is your profile and security access panel.</p>
     </div>
 
-    <div class="card shadow mx-auto" style="max-width: 500px;">
-        <div class="card-body">
-            <h4 class="card-title text-center mb-4">User ID Card</h4>
-            <div class="text-center mb-3">
-                <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                     alt="User Icon" width="100" class="rounded-circle mb-3">
-            </div>
-            <p><strong>Name:</strong> <?= htmlspecialchars($user['name']) ?></p>
-            <p><strong>Email:</strong> <?= htmlspecialchars($user['email'] ?? '-') ?></p>
-            <p><strong>UID:</strong> <?= htmlspecialchars($user['uid'] ?? '-') ?></p>
-            <p><strong>Role:</strong> <?= htmlspecialchars(ucfirst($role)) ?></p>
-            <p><strong>Registered:</strong> <?= htmlspecialchars($user['created_at']) ?></p>
-
-            <hr>
-            <div class="text-center mt-3">
-                <!-- Send OTP -->
-                <button id="sendOtpBtn" class="btn btn-primary mb-2">Send OTP (Forgot Card)</button>
-
-                <!-- OTP input & verify -->
-                <div class="input-group mb-2" style="max-width: 300px; margin: 0 auto;">
-                    <input type="text" id="otpInput" class="form-control" placeholder="Enter OTP">
-                    <button id="verifyOtpBtn" class="btn btn-success">Verify OTP</button>
-                </div>
-
-                <div id="otpResult" class="mt-3"></div>
-            </div>
+    <!-- User Card -->
+    <div class="card-modern mx-auto" style="max-width: 500px;">
+        <div class="text-center mb-3">
+            <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                 class="avatar" alt="User Avatar">
         </div>
+
+        <h4 class="text-center mb-4">Your ID Profile</h4>
+
+        <p><span class="info-label">Name:</span> <?= htmlspecialchars($user['name']) ?></p>
+        <p><span class="info-label">Email:</span> <?= htmlspecialchars($user['email'] ?? '-') ?></p>
+        <p><span class="info-label">UID:</span> <?= htmlspecialchars($user['uid'] ?? '-') ?></p>
+        <p><span class="info-label">Role:</span> <?= htmlspecialchars(ucfirst($role)) ?></p>
+        <p><span class="info-label">Registered:</span> <?= htmlspecialchars($user['created_at']) ?></p>
+
+        <hr class="my-4">
+
+        <!-- OTP Section -->
+        <div class="text-center">
+            <button id="sendOtpBtn" class="btn btn-primary btn-modern w-100 mb-3">
+                Send OTP (Forgot Card)
+            </button>
+
+            <div class="input-group otp-group mb-3">
+                <input type="text" id="otpInput" class="form-control input-modern" placeholder="Enter OTP">
+                <button id="verifyOtpBtn" class="btn btn-success btn-modern">Verify</button>
+            </div>
+
+            <div id="otpResult" class="mt-3"></div>
+        </div>
+
     </div>
 </div>
 
@@ -82,69 +145,60 @@ const otpInput = document.querySelector('#otpInput');
 const resultDiv = document.querySelector('#otpResult');
 
 // --- Send OTP ---
-sendBtn.addEventListener('click', async function() {
+sendBtn.addEventListener('click', async function () {
     sendBtn.disabled = true;
-    sendBtn.textContent = 'Sending...';
-    resultDiv.innerHTML = '';
+    sendBtn.textContent = "Sending...";
+
+    resultDiv.innerHTML = "";
 
     try {
         const res = await fetch('/rfid_monitoring_system/api/send_mail.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user_id: userId }),
-            credentials: 'same-origin'
         });
 
-        if (!res.ok) throw new Error('HTTP error ' + res.status);
         const data = await res.json();
+        resultDiv.innerHTML = `<div class="alert ${data.success ? 'alert-success' : 'alert-danger'}">${data.message}</div>`;
 
-        resultDiv.innerHTML = `<div class="alert ${data.success ? 'alert-success' : 'alert-danger'}">
-            ${data.message}
-        </div>`;
-    } catch (err) {
-        console.error(err);
-        resultDiv.innerHTML = `<div class="alert alert-danger">Network or server error.</div>`;
-    } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Send OTP (Forgot Card)';
+    } catch (e) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">Network error. Try again.</div>`;
     }
+
+    sendBtn.disabled = false;
+    sendBtn.textContent = "Send OTP (Forgot Card)";
 });
 
 // --- Verify OTP ---
-verifyBtn.addEventListener('click', async function() {
-    const otpValue = otpInput.value.trim();
-    if (!otpValue) {
-        resultDiv.innerHTML = `<div class="alert alert-warning">Please enter the OTP.</div>`;
+verifyBtn.addEventListener('click', async function () {
+    const otp = otpInput.value.trim();
+    if (!otp) {
+        resultDiv.innerHTML = `<div class="alert alert-warning">Enter your OTP first.</div>`;
         return;
     }
 
     verifyBtn.disabled = true;
-    verifyBtn.textContent = 'Verifying...';
-    resultDiv.innerHTML = '';
+    verifyBtn.textContent = "Verifying...";
+    resultDiv.innerHTML = "";
 
     try {
         const res = await fetch('/rfid_monitoring_system/api/verify_otp.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ otp: otpValue, user_id: userId }),
-            credentials: 'same-origin'
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ otp: otp, user_id: userId }),
         });
 
-        if (!res.ok) throw new Error('HTTP error ' + res.status);
         const data = await res.json();
-
-        resultDiv.innerHTML = `<div class="alert ${data.success ? 'alert-success' : 'alert-danger'}">
-            ${data.message}
-        </div>`;
+        resultDiv.innerHTML = `<div class="alert ${data.success ? 'alert-success' : 'alert-danger'}">${data.message}</div>`;
 
     } catch (err) {
-        console.error(err);
-        resultDiv.innerHTML = `<div class="alert alert-danger">Network or server error.</div>`;
-    } finally {
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = 'Verify OTP';
+        resultDiv.innerHTML = `<div class="alert alert-danger">Verification error. Try again.</div>`;
     }
+
+    verifyBtn.disabled = false;
+    verifyBtn.textContent = "Verify OTP";
 });
 </script>
+
 </body>
 </html>

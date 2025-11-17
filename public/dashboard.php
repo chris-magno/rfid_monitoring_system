@@ -9,20 +9,45 @@ if (!isAdmin()) {
 
 require_once __DIR__ . '/../config/db.php';
 
-// -------------------- Functions --------------------
+// Fetch data functions
 function getTotalUsers($pdo) {
     $stmt = $pdo->query("SELECT COUNT(*) AS total FROM users");
     return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 }
 
+function getActiveUsers($pdo) {
+    $stmt = $pdo->query("SELECT COUNT(*) AS total FROM users WHERE is_active = 1");
+    return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+}
+
+function getInactiveUsers($pdo) {
+    $stmt = $pdo->query("SELECT COUNT(*) AS total FROM users WHERE is_active = 0");
+    return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+}
+
+function getUnreadAlertsCount($pdo) {
+    $stmt = $pdo->query("SELECT COUNT(*) AS total FROM admin_alerts WHERE is_read = 0");
+    return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+}
+
 function getTotalAlerts($pdo) {
-    $stmt = $pdo->query("SELECT COUNT(*) AS total FROM alerts");
+    $stmt = $pdo->query("SELECT COUNT(*) AS total FROM admin_alerts");
+    return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+}
+
+function getTotalAccessLogs($pdo) {
+    $stmt = $pdo->query("SELECT COUNT(*) AS total FROM access_logs");
+    return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+}
+
+function getTotalTimeLogs($pdo) {
+    $stmt = $pdo->query("SELECT COUNT(*) AS total FROM time_logs");
     return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 }
 
 function getRecentAccessLogs($pdo, $limit = 10) {
     $stmt = $pdo->prepare("
-        SELECT al.id, al.uid, u.name AS user_name, u.email, al.status, al.attempts, al.log_time
+        SELECT al.id, al.uid, u.name AS user_name, al.status, al.log_time
         FROM access_logs al
         LEFT JOIN users u ON al.user_id = u.id
         ORDER BY al.log_time DESC
@@ -44,102 +69,266 @@ function getRecentTimeLogs($pdo, $limit = 10) {
     $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 }
 
-// -------------------- Fetch Data --------------------
+function getRecentAlerts($pdo, $limit = 5) {
+    $stmt = $pdo->prepare("
+        SELECT id, uid, user_name, alert_type, message, created_at, is_read
+        FROM admin_alerts
+        ORDER BY created_at DESC
+        LIMIT :limit
+    ");
+    $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Fetch all statistics
 $totalUsers = getTotalUsers($pdo);
-$totalAlerts = getTotalAlerts($pdo);
+$activeUsers = getActiveUsers($pdo);
+$inactiveUsers = getInactiveUsers($pdo);
+$totalAlertsUnread = getUnreadAlertsCount($pdo);
+$totalAlertsAll = getTotalAlerts($pdo);
+$totalAccessLogs = getTotalAccessLogs($pdo);
+$totalTimeLogs = getTotalTimeLogs($pdo);
+
 $accessLogs = getRecentAccessLogs($pdo);
 $timeLogs = getRecentTimeLogs($pdo);
+$recentAlerts = getRecentAlerts($pdo);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard - RFID Monitoring</title>
+    <title>Admin Panel - RFID Monitoring</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .table-responsive { max-height: 400px; overflow-y: auto; }
-        .card { border-radius: 1rem; }
+        body {
+            background: #f5f7fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: #111827;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 25px 20px;
+            color: white;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .nav-link {
+            color: #d1d5db !important;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        .nav-link i {
+            margin-right: 10px;
+            min-width: 20px;
+            text-align: center;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: #1f2937;
+            color: #fff !important;
+        }
+
+        .sidebar hr {
+            border-color: #374151;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            transition: margin-left 0.3s ease;
+        }
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* ===== TOGGLE BUTTON ===== */
+        .toggle-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: #111827;
+            border-radius: 6px;
+            color: #fff;
+            border: none;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 1100;
+            display: none;
+        }
+
+        .toggle-btn i {
+            font-size: 20px;
+        }
+
+        /* ===== CARDS ===== */
+        .card-modern {
+            border-radius: 18px;
+            background: #ffffff;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .card-modern h5 {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .card-modern .number {
+            font-size: 42px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        /* ===== TABLE ===== */
+        .table-modern {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        thead {
+            background: #111827;
+            color: white;
+        }
+
+        tbody tr:hover {
+            background: #f3f4f6;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .toggle-btn {
+                display: block;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="#">RFID Monitoring</a>
-        <div class="ms-auto d-flex gap-2">
-            <a href="read_tag.php" class="btn btn-sm btn-primary">Read Tag</a>
-            <a href="register_user.php" class="btn btn-sm btn-success">Register User</a>
-            <a href="users.php" class="btn btn-sm btn-warning">User Management</a>
-            <!-- Logout Button -->
-<button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
-    Logout
-</button>
+<!-- TOGGLE BUTTON / HAMBURGER -->
+<button class="toggle-btn" id="toggleBtn"><i class="bi bi-list"></i></button>
 
-
-        </div>
-    </div>
-</nav>
-
-<!-- Logout Confirmation Modal -->
-<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered"> <!-- centers the modal -->
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center">
-        Are you sure you want to logout?
-      </div>
-      <div class="modal-footer justify-content-center">
-        <a href="logout.php" class="btn btn-danger">Yes</a>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-      </div>
-    </div>
-  </div>
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="#" class="nav-link active"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a>
+    <a href="read_tag.php" class="nav-link"><i class="bi bi-card-text"></i> <span>Read Tag</span></a>
+    <a href="register_user.php" class="nav-link"><i class="bi bi-person-plus"></i> <span>Register User</span></a>
+    <a href="users.php" class="nav-link"><i class="bi bi-people"></i> <span>User Management</span></a>
+    <a href="access_logs.php" class="nav-link"><i class="bi bi-journal-text"></i> <span>Access Logs</span></a>
+    <a href="time_logs.php" class="nav-link"><i class="bi bi-clock-history"></i> <span>Time Logs</span></a>
+    <a href="alerts.php" class="nav-link"><i class="bi bi-bell"></i> <span>Alerts</span></a>
+    <hr>
+    <a href="logout.php" class="btn btn-danger w-100 mt-2"><i class="bi bi-box-arrow-right"></i> <span>Logout</span></a>
 </div>
 
+<!-- MAIN CONTENT -->
+<div class="main-content" id="mainContent">
 
-<div class="container mt-4">
-
-    <!-- Quick Stats -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card text-center shadow">
-                <div class="card-body">
-                    <h5 class="card-title">Total Users</h5>
-                    <p class="display-6"><?= $totalUsers ?></p>
-                </div>
+    <!-- STATISTICS CARDS ROW 1 -->
+    <div class="row mb-4 g-4">
+        <div class="col-md-3">
+            <div class="card-modern">
+                <h5>Total Users</h5>
+                <div class="number"><?= $totalUsers ?></div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-center shadow">
-                <div class="card-body">
-                    <h5 class="card-title">Failed Alerts</h5>
-                    <p class="display-6"><?= $totalAlerts ?></p>
-                </div>
+        <div class="col-md-3">
+            <div class="card-modern">
+                <h5>Active Users</h5>
+                <div class="number text-success"><?= $activeUsers ?></div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-center shadow">
-                <div class="card-body">
-                    <h5 class="card-title">Recent Access Logs</h5>
-                    <p class="display-6"><?= count($accessLogs) ?></p>
-                </div>
+        <div class="col-md-3">
+            <div class="card-modern">
+                <h5>Inactive Users</h5>
+                <div class="number text-danger"><?= $inactiveUsers ?></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-modern">
+                <h5>Unread Alerts</h5>
+                <div class="number"><?= $totalAlertsUnread ?></div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Access Logs -->
-    <h3>Recent Access Logs</h3>
-    <div class="table-responsive">
-        <table class="table table-striped table-bordered">
-            <thead class="table-dark">
+    <!-- STATISTICS CARDS ROW 2 -->
+    <div class="row mb-4 g-4">
+        <div class="col-md-3">
+            <div class="card-modern">
+                <h5>Total Access Logs</h5>
+                <div class="number"><?= $totalAccessLogs ?></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-modern">
+                <h5>Access Logs Today</h5>
+                <div class="number"><?= count($accessLogs) ?></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-modern">
+                <h5>Total Time Logs</h5>
+                <div class="number"><?= $totalTimeLogs ?></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card-modern">
+                <h5>Total Alerts</h5>
+                <div class="number"><?= $totalAlertsAll ?></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS -->
+    <h3 class="mt-5">Statistics Overview</h3>
+    <div class="card-modern p-4">
+        <canvas id="statsChart" height="100"></canvas>
+    </div>
+
+    <!-- ACCESS LOGS -->
+    <h3 class="mt-5">Recent Access Logs</h3>
+    <div class="table-modern mt-3">
+        <table class="table table-hover mb-0">
+            <thead>
                 <tr>
                     <th>UID</th>
                     <th>User</th>
@@ -148,37 +337,27 @@ $timeLogs = getRecentTimeLogs($pdo);
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($accessLogs as $log): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($log['uid']) ?></td>
-                        <td><?= htmlspecialchars($log['user_name'] ?? 'Unknown') ?></td>
-                        <td>
-                            <?php if ($log['status'] === 'granted'): ?>
-                                <span class="badge bg-success">Granted</span>
-                            <?php else: ?>
-                                <span class="badge bg-danger">Denied</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php
-                            $dt = new DateTime($log['log_time'], new DateTimeZone('Asia/Manila'));
-                            echo $dt->format('M d, Y h:i A');
-                            ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
+            <?php foreach ($accessLogs as $log): ?>
+                <tr>
+                    <td><?= htmlspecialchars($log['uid']) ?></td>
+                    <td><?= htmlspecialchars($log['user_name'] ?? 'Unknown') ?></td>
+                    <td>
+                        <span class="badge bg-<?= $log['status'] === 'granted' ? 'success' : 'danger' ?>">
+                            <?= ucfirst($log['status']) ?>
+                        </span>
+                    </td>
+                    <td><?= (new DateTime($log['log_time'], new DateTimeZone('Asia/Manila')))->format('M d, Y h:i A') ?></td>
+                </tr>
+            <?php endforeach; ?>
             </tbody>
         </table>
-        <div class="text-end mb-3">
-            <a href="access_logs.php" class="btn btn-primary btn-sm">View All Access Logs</a>
-        </div>
     </div>
 
-    <!-- Recent Time Logs -->
+    <!-- TIME LOGS -->
     <h3 class="mt-5">Recent Time Logs</h3>
-    <div class="table-responsive">
-        <table class="table table-striped table-bordered">
-            <thead class="table-success">
+    <div class="table-modern mt-3">
+        <table class="table table-hover mb-0">
+            <thead class="table-success text-dark">
                 <tr>
                     <th>User</th>
                     <th>UID</th>
@@ -187,47 +366,109 @@ $timeLogs = getRecentTimeLogs($pdo);
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($timeLogs as $log): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($log['user_name'] ?? 'Unknown') ?></td>
-                        <td><?= htmlspecialchars($log['uid']) ?></td>
-                        <td>
-                            <?php
-                            $timeIn = new DateTime($log['time_in'], new DateTimeZone('Asia/Manila'));
-                            echo $timeIn->format('M d, Y h:i A');
-                            ?>
-                        </td>
-                        <td>
-                            <?php
-                            if ($log['time_out']) {
-                                $timeOut = new DateTime($log['time_out'], new DateTimeZone('Asia/Manila'));
-                                echo $timeOut->format('M d, Y h:i A');
-                            } else {
-                                echo '-';
-                            }
-                            ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
+            <?php foreach ($timeLogs as $log): ?>
+                <tr>
+                    <td><?= htmlspecialchars($log['user_name'] ?? 'Unknown') ?></td>
+                    <td><?= htmlspecialchars($log['uid']) ?></td>
+                    <td><?= (new DateTime($log['time_in'], new DateTimeZone('Asia/Manila')))->format('M d, Y h:i A') ?></td>
+                    <td>
+                        <?= $log['time_out']
+                            ? (new DateTime($log['time_out'], new DateTimeZone('Asia/Manila')))->format('M d, Y h:i A')
+                            : '-' ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
             </tbody>
         </table>
-        <div class="text-end mb-3">
-            <a href="time_logs.php" class="btn btn-success btn-sm">View All Time Logs</a>
-        </div>
     </div>
 
-    <!-- Quick Access -->
-    <div class="mt-4 text-center">
-        <a href="users.php" class="btn btn-warning btn-lg">Go to User Management</a>
+    <!-- ALERTS -->
+    <h3 class="mt-5">Recent Alerts</h3>
+    <div class="table-modern mt-3">
+        <table class="table table-hover mb-0">
+            <thead class="table-danger text-dark">
+                <tr>
+                    <th>User</th>
+                    <th>UID</th>
+                    <th>Type</th>
+                    <th>Message</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($recentAlerts as $alert): ?>
+                <tr class="<?= $alert['is_read'] ? '' : 'fw-bold' ?>">
+                    <td><?= htmlspecialchars($alert['user_name']) ?></td>
+                    <td><?= htmlspecialchars($alert['uid']) ?></td>
+                    <td><?= htmlspecialchars($alert['alert_type']) ?></td>
+                    <td><?= htmlspecialchars($alert['message']) ?></td>
+                    <td><?= (new DateTime($alert['created_at'], new DateTimeZone('Asia/Manila')))->format('M d, Y h:i A') ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
-
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const sidebar = document.getElementById('sidebar');
+const toggleBtn = document.getElementById('toggleBtn');
 
+toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('show');
+});
 
+// ===== Chart.js Bar Chart =====
+const ctx = document.getElementById('statsChart').getContext('2d');
+
+const statsChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Total Users', 'Active Users', 'Inactive Users', 'Total Alerts', 'Unread Alerts', 'Access Logs', 'Time Logs'],
+        datasets: [{
+            label: 'Counts',
+            data: [
+                <?= $totalUsers ?>,
+                <?= $activeUsers ?>,
+                <?= $inactiveUsers ?>,
+                <?= $totalAlertsAll ?>,
+                <?= $totalAlertsUnread ?>,
+                <?= $totalAccessLogs ?>,
+                <?= $totalTimeLogs ?>
+            ],
+            backgroundColor: [
+                '#3B82F6', // blue
+                '#10B981', // green
+                '#EF4444', // red
+                '#F59E0B', // yellow
+                '#8B5CF6', // purple
+                '#14B8A6', // teal
+                '#F97316'  // orange
+            ],
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': ' + context.raw;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { precision:0 }
+            }
+        }
+    }
+});
+</script>
 
 </body>
 </html>
-
-<!-- etss -->

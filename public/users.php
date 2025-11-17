@@ -8,39 +8,110 @@ require_once __DIR__ . '/users_function.php';
 <meta charset="UTF-8">
 <title>User Management - RFID Monitoring</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container mt-5">
-    <h2 class="mb-4 text-center">User Management</h2>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+body {
+    background: #f9fafb;
+    font-family: 'Inter', sans-serif;
+}
 
+/* ===== HEADER ===== */
+.header {
+    padding: 25px 0;
+    text-align: center;
+    color: #111827;
+}
+
+.header h2 {
+    font-weight: 600;
+}
+
+/* ===== BUTTONS ===== */
+.btn-custom {
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-weight: 500;
+}
+
+/* ===== TABLE CARD ===== */
+.card {
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    background: #ffffff;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.table thead {
+    background: #f3f4f6;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.btn-sm {
+    border-radius: 6px;
+}
+
+/* ===== MODALS ===== */
+.modal-content {
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+/* ===== RESPONSIVE SPACING ===== */
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+    }
+    .btn-group .btn {
+        margin-bottom: 8px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <!-- HEADER -->
+    <div class="header mb-4">
+        <h2>User Management</h2>
+    </div>
+
+    <!-- ALERTS -->
     <?php if ($success): ?>
-        <div class="alert alert-success"><?= $success ?></div>
+        <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
     <?php endif; ?>
     <?php if ($error): ?>
         <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <div class="mb-3">
-        <a href="register_user.php" class="btn btn-success">+ Register New User</a>
-        <a href="dashboard.php" class="btn btn-secondary">Back to Dashboard</a>
+    <!-- ACTION BUTTONS -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <a href="register_user.php" class="btn btn-success btn-custom"><i class="bi bi-person-plus"></i> Register New User</a>
+        <a href="dashboard.php" class="btn btn-secondary btn-custom"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>UID</th>
-                    <th>Category</th>
-                    <th>Status</th>
-                    <th>Created At</th>
-                    <th>Password</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
+    <!-- USERS TABLE CARD -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>UID</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Password</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
                 <?php if (!empty($users)): ?>
                     <?php foreach ($users as $user): ?>
                         <tr>
@@ -59,18 +130,15 @@ require_once __DIR__ . '/users_function.php';
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <!-- Edit button -->
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editModal<?= $user['id'] ?>">Edit</button>
-
-                                <!-- Reset Password button -->
-                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#resetModal<?= $user['id'] ?>">Reset</button>
-
-                                <!-- Delete button -->
-                                <form method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure?')">
-                                    <input type="hidden" name="id" value="<?= $user['id'] ?>">
-                                    <input type="hidden" name="action" value="delete">
-                                    <button class="btn btn-sm btn-danger">Delete</button>
-                                </form>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editModal<?= $user['id'] ?>"><i class="bi bi-pencil-square"></i></button>
+                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#resetModal<?= $user['id'] ?>"><i class="bi bi-key"></i></button>
+                                    <form method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure?')">
+                                        <input type="hidden" name="id" value="<?= $user['id'] ?>">
+                                        <input type="hidden" name="action" value="delete">
+                                        <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
 
@@ -129,28 +197,29 @@ require_once __DIR__ . '/users_function.php';
                                     <input type="hidden" name="id" value="<?= $user['id'] ?>">
                                     <input type="hidden" name="action" value="reset_password">
 
-                                <div class="mb-3">
-                                    <label>New Password</label>
-                                    <input type="password" name="new_password" class="form-control" placeholder="Enter new password" required>
-                                </div>
+                                    <div class="mb-3">
+                                        <label>New Password</label>
+                                        <input type="password" name="new_password" class="form-control" placeholder="Enter new password" required>
+                                    </div>
                                 </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                         <button type="submit" class="btn btn-warning">Update Password</button>
                                     </div>
                                 </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
 
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr><td colspan="9" class="text-center">No users found</td></tr>
                 <?php endif; ?>
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
