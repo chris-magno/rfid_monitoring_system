@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     rgba(0, 38, 99, 0.6),   /* dark blue with opacity */
                     rgba(204, 0, 0, 0.6)     /* red with opacity */
                 ),
-                url('../letranBackground.jpg') no-repeat center center fixed;
+                url('../delapaazletranBackground.jpg') no-repeat center center fixed;
             background-size: cover;
         }
 
