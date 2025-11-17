@@ -99,6 +99,7 @@ if ($otpRecord) {
 
     echo json_encode([
         'success' => true,
+<<<<<<< HEAD
         'action' => $action,
         'message' => $message,
         'esp_response' => $response,
@@ -116,6 +117,21 @@ $stmt->execute([
     'uid' => $uid,
     'user_id' => $userId
 ]);
+=======
+        'message' => 'Access granted via OTP. Door unlock signal sent.',
+        'esp_response' => $response
+    ]);
+} else {
+    // ❌ OTP invalid
+    $stmt = $pdo->prepare("
+        INSERT INTO access_logs (uid, user_id, status, attempts, access_type, log_time)
+        VALUES (:uid, :user_id, 'denied', 1, 'otp', NOW())
+    ");
+    $stmt->execute([
+        'uid' => $uid,
+        'user_id' => $userId
+    ]);
+>>>>>>> e0819aecccea21e01e16e4d97be9759f6e3fe34a
 
 echo json_encode([
     'success' => false,
