@@ -106,8 +106,21 @@ $recentAlerts = getRecentAlerts($pdo);
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            background: #f5f7fa;
-            font-family: 'Inter', sans-serif;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+        
+            /* Letran-style gradient overlay */
+            background: linear-gradient(
+                    rgba(0, 38, 99, 0.6),   /* dark blue with opacity */
+                    rgba(204, 0, 0, 0.6)     /* red with opacity */
+                ),
+                url('../delapaazletranBackground.jpg') no-repeat center center fixed;
+            background-size: cover;
         }
 
         /* ===== SIDEBAR ===== */
@@ -212,6 +225,10 @@ $recentAlerts = getRecentAlerts($pdo);
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        h3 {
+            color:white;
         }
 
         thead {

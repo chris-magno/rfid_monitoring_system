@@ -48,14 +48,27 @@ $nextDay = date('Y-m-d', strtotime("$day +1 day"));
 
     <style>
         body {
-            background: #f5f7fb;
-            font-family: 'Inter', sans-serif;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+        
+            /* Letran-style gradient overlay */
+            background: linear-gradient(
+                    rgba(0, 38, 99, 0.6),   /* dark blue with opacity */
+                    rgba(204, 0, 0, 0.6)     /* red with opacity */
+                ),
+                url('../delapaazletranBackground.jpg') no-repeat center center fixed;
+            background-size: cover;
         }
 
         .page-title {
             font-size: 2rem;
             font-weight: 700;
-            color: #2c3e50;
+            color: white;
         }
 
         /* Modern Card */
